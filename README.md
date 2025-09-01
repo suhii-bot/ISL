@@ -66,3 +66,7 @@ This project is currently unlicensed(Educational purpose only)
 ## About
 
 Developed and maintained by [suhii-bot](https://github.com/suhii-bot).
+## Collaborators 🤝
+- Rachana V M (https://github.com/Rachhhanaaa) 
+- Kushik S K (https://github.com/Kushik18)
+
