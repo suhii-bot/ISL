@@ -1,4 +1,4 @@
-# ISL: Indian Sign Language to Text Translator
+# ISL: Indian Sign Language Translator
 
 A real-time Indian Sign Language (ISL) to Text Translator using Python, MediaPipe, and Convolutional Neural Networks (CNN). This project recognizes hand gestures via webcam and converts them into text, helping bridge communication between speech/hearing-impaired individuals and others. It is scalable, accurate, and designed for accessibility.
 
