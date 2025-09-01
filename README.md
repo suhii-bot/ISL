@@ -1,70 +1,68 @@
-# Getting Started with Create React App
+# ISL: Indian Sign Language to Text Translator
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A real-time Indian Sign Language (ISL) to Text Translator using Python, MediaPipe, and Convolutional Neural Networks (CNN). This project recognizes hand gestures via webcam and converts them into text, helping bridge communication between speech/hearing-impaired individuals and others. It is scalable, accurate, and designed for accessibility.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **Real-time ISL Recognition:** Detects and translates Indian Sign Language gestures live from webcam input.
+- **Gesture-to-Text Conversion:** Converts recognized hand signs directly into readable text.
+- **Modular Model Design:** Easy to extend for more gestures or languages.
+- **Accuracy & Speed:** Uses a trained CNN for high accuracy and rapid prediction.
+- **Accessibility Focus:** Designed for ease of use by individuals with speech or hearing impairments.
+- **Media Capture:** Supports uploading snap videos or images for recognition and documentation.
 
-### `npm start`
+## Tech Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **Python:** Main programming language.
+- **MediaPipe:** For robust hand landmark detection and gesture tracking.
+- **OpenCV:** For video stream capture and image processing.
+- **TensorFlow/Keras:** For building and training the CNN gesture classification model.
+- **Jupyter Notebook / Colab:** For model training and experimentation.
+- **NumPy & Pandas:** Data manipulation and preprocessing.
+- **Other Libraries:** Matplotlib for visualization, tqdm for progress bars.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Usage
 
-### `npm test`
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/suhii-bot/ISL.git
+   cd ISL
+   ```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-### `npm run build`
+3. **Run the main application:**
+   ```bash
+   python main.py
+   ```
+   Show ISL gestures in front of your webcam. The recognized text will be displayed on the screen.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+4. **Uploading Snap Videos or Images:**
+   - Place your video (`.mp4`, `.avi`) or image (`.jpg`, `.png`) files in the `media/` folder.
+   - Use the provided scripts (e.g., `process_media.py`) to analyze these files and extract gesture predictions.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Project Structure
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- `main.py` - Main entry point for webcam-based recognition.
+- `model/` - Contains CNN model architecture and weights.
+- `utils/` - Utility functions for data processing, visualization, etc.
+- `media/` - Folder for storing snap videos and images for gesture analysis.
+- `docs/` - Documentation and example usage.
+- `requirements.txt` - List of dependencies.
+- `README.md` - Project overview and instructions.
 
-### `npm run eject`
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Contributing
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change or add (such as new gestures, improved models, or additional media).
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## License
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+This project is currently unlicensed(Educational purpose only) 
 
-## Learn More
+## About
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Developed and maintained by [suhii-bot](https://github.com/suhii-bot).
