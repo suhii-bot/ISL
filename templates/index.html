@@ -1,0 +1,601 @@
+{% extends "base.html" %}
+
+{% block title %}ISL Translator - Live Prediction{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Webcam specific styles */
+    .webcam-container {
+        position: relative;
+        max-width: 640px;
+        margin: 0 auto;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+        background-color: var(--bg-secondary);
+    }
+    
+    .webcam-video {
+        width: 100%;
+        height: auto;
+        display: block;
+        background-color: #000;
+    }
+    
+    .webcam-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.1) 100%);
+        pointer-events: none;
+    }
+    
+    .prediction-display {
+        position: absolute;
+        bottom: 1rem;
+        left: 1rem;
+        right: 1rem;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        backdrop-filter: blur(10px);
+    }
+    
+    .prediction-text {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .confidence-bar {
+        width: 100%;
+        height: 0.5rem;
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 0.25rem;
+        overflow: hidden;
+    }
+    
+    .confidence-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+        transition: width 0.3s ease;
+        border-radius: 0.25rem;
+    }
+    
+    .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    .status-connected {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: var(--accent-color);
+        border: 1px solid var(--accent-color);
+    }
+    
+    .status-disconnected {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: var(--danger-color);
+        border: 1px solid var(--danger-color);
+    }
+    
+    .status-loading {
+        background-color: rgba(245, 158, 11, 0.1);
+        color: var(--warning-color);
+        border: 1px solid var(--warning-color);
+    }
+    
+    .controls {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 1.5rem;
+    }
+    
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-top: 3rem;
+    }
+    
+    .feature-card {
+        text-align: center;
+        padding: 2rem;
+    }
+    
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        display: block;
+    }
+    
+    .hero-section {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .hero-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.2rem;
+        color: var(--text-secondary);
+        margin-bottom: 2rem;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    
+    .stat-card {
+        text-align: center;
+        padding: 1rem;
+        background-color: var(--bg-tertiary);
+        border-radius: 0.5rem;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+    
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 2rem;
+        }
+        
+        .prediction-text {
+            font-size: 1.2rem;
+        }
+        
+        .controls {
+            flex-direction: column;
+            align-items: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <h1 class="hero-title">Live ISL Translation</h1>
+    <p class="hero-subtitle">
+        Real-time Indian Sign Language recognition using advanced AI and computer vision.
+        Simply show your hand signs to the camera and get instant translations.
+    </p>
+</div>
+
+<!-- Main Webcam Section -->
+<div class="card">
+    <div class="text-center mb-3">
+        <h2 class="mb-2">📹 Live Camera Feed</h2>
+        <div id="camera-status" class="status-indicator status-disconnected">
+            <span>⚫</span>
+            <span>Camera Disconnected</span>
+        </div>
+    </div>
+    
+    <div class="webcam-container">
+        <video id="webcam" class="webcam-video" autoplay muted playsinline></video>
+        <canvas id="canvas" style="display: none;"></canvas>
+        <div class="webcam-overlay"></div>
+        
+        <div class="prediction-display" id="prediction-display" style="display: none;">
+            <div class="prediction-text" id="prediction-text">No prediction</div>
+            <div class="mb-1">
+                <small>Confidence: <span id="confidence-text">0%</span></small>
+            </div>
+            <div class="confidence-bar">
+                <div class="confidence-fill" id="confidence-fill" style="width: 0%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Popup Modal for Mode Selection -->
+<div id="mode-popup" style="display: none; position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000;
+    justify-content: center; align-items: center;">
+  <div style="background: white; padding: 2rem; border-radius: 8px; text-align: center; width: 300px;">
+    <h3>Select Recognition Mode</h3>
+    <button id="btn-gesture-text" style="margin: 10px; padding: 10px 20px; font-size: 16px;">Gesture to Text</button>
+    <button id="btn-gesture-voice" style="margin: 10px; padding: 10px 20px; font-size: 16px;">Gesture to Voice</button>
+    <br />
+    <button id="btn-popup-close" style="margin-top: 15px; padding: 8px 16px;">Cancel</button>
+  </div>
+</div>
+
+    
+    <div class="controls">
+    <button id="start-camera" class="btn btn-primary">
+        📷 Start Camera
+    </button>
+    <button id="stop-camera" class="btn btn-secondary" style="display: none;">
+        ⏹️ Stop Camera
+    </button>
+    <button id="toggle-prediction" class="btn btn-success" style="display: none;">
+        🔮 Start Prediction
+    </button>
+
+    <!-- New Gesture to Voice Button -->
+    <button id="gesture-to-voice" class="btn btn-accent" style="margin-left: 1rem;">
+        🎤 Gesture to Voice
+    </button>
+</div>
+
+    
+    <!-- Statistics -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number" id="predictions-count">0</div>
+            <div class="stat-label">Predictions Made</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="avg-confidence">0%</div>
+            <div class="stat-label">Avg Confidence</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="session-time">00:00</div>
+            <div class="stat-label">Session Time</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="fps-counter">0</div>
+            <div class="stat-label">FPS</div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="feature-grid">
+    <div class="card feature-card">
+        <span class="feature-icon">🤖</span>
+        <h3 class="mb-2">AI-Powered Recognition</h3>
+        <p class="text-muted">
+            Advanced CNN model trained on thousands of ISL signs for accurate real-time recognition.
+        </p>
+    </div>
+    
+    <div class="card feature-card">
+        <span class="feature-icon">⚡</span>
+        <h3 class="mb-2">Real-Time Processing</h3>
+        <p class="text-muted">
+            Instant sign detection and translation with minimal latency for smooth communication.
+        </p>
+    </div>
+    
+    <div class="card feature-card">
+        <span class="feature-icon">🎯</span>
+        <h3 class="mb-2">High Accuracy</h3>
+        <p class="text-muted">
+            Trained on comprehensive ISL dataset covering A-Z alphabets and 0-9 numbers.
+        </p>
+    </div>
+    
+    <div class="card feature-card">
+        <span class="feature-icon">📱</span>
+        <h3 class="mb-2">Cross-Platform</h3>
+        <p class="text-muted">
+            Works seamlessly across desktop and mobile devices with responsive design.
+        </p>
+    </div>
+</div>
+
+<!-- Instructions -->
+<div class="card mt-4">
+    <h3 class="mb-3">📋 How to Use</h3>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4">
+        <div class="text-center mb-3">
+            <div class="feature-icon">1️⃣</div>
+            <h4 class="mb-1">Start Camera</h4>
+            <p class="text-muted">Click "Start Camera" to enable your webcam</p>
+        </div>
+        <div class="text-center mb-3">
+            <div class="feature-icon">2️⃣</div>
+            <h4 class="mb-1">Position Hands</h4>
+            <p class="text-muted">Show your hands clearly in the camera frame</p>
+        </div>
+        <div class="text-center mb-3">
+            <div class="feature-icon">3️⃣</div>
+            <h4 class="mb-1">Start Prediction</h4>
+            <p class="text-muted">Enable real-time sign recognition</p>
+        </div>
+        <div class="text-center mb-3">
+            <div class="feature-icon">4️⃣</div>
+            <h4 class="mb-1">See Results</h4>
+            <p class="text-muted">View predictions with confidence scores</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Global variables
+    let webcam = null;
+    let canvas = null;
+    let ctx = null;
+    let isStreaming = false;
+    let isPredicting = false;
+    let predictionInterval = null;
+    let sessionStartTime = null;
+    let sessionTimer = null;
+    let predictionsCount = 0;
+    let confidenceSum = 0;
+    let lastFrameTime = 0;
+    let frameCount = 0;
+    
+    // DOM elements
+    const webcamElement = document.getElementById('webcam');
+    const canvasElement = document.getElementById('canvas');
+    const startCameraBtn = document.getElementById('start-camera');
+    const stopCameraBtn = document.getElementById('stop-camera');
+    const togglePredictionBtn = document.getElementById('toggle-prediction');
+    const cameraStatus = document.getElementById('camera-status');
+    const predictionDisplay = document.getElementById('prediction-display');
+    const predictionText = document.getElementById('prediction-text');
+    const confidenceText = document.getElementById('confidence-text');
+    const confidenceFill = document.getElementById('confidence-fill');
+    
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        canvas = canvasElement;
+        ctx = canvas.getContext('2d');
+        
+        // Event listeners
+        startCameraBtn.addEventListener('click', startCamera);
+        stopCameraBtn.addEventListener('click', stopCamera);
+        togglePredictionBtn.addEventListener('click', togglePrediction);
+        
+        // Check camera permissions
+        checkCameraPermissions();
+    });
+    
+    async function checkCameraPermissions() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            stream.getTracks().forEach(track => track.stop());
+            updateCameraStatus('ready', '🟡 Camera Ready');
+        } catch (error) {
+            updateCameraStatus('error', '🔴 Camera Access Denied');
+            console.error('Camera permission denied:', error);
+        }
+    }
+    
+    async function startCamera() {
+        try {
+            updateCameraStatus('loading', '🟡 Starting Camera...');
+            
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 640 },
+                    height: { ideal: 480 },
+                    facingMode: 'user'
+                }
+            });
+            
+            webcamElement.srcObject = stream;
+            webcam = stream;
+            isStreaming = true;
+            
+            // Update UI
+            startCameraBtn.style.display = 'none';
+            stopCameraBtn.style.display = 'inline-flex';
+            togglePredictionBtn.style.display = 'inline-flex';
+            updateCameraStatus('connected', '🟢 Camera Connected');
+            
+            // Setup canvas
+            webcamElement.addEventListener('loadedmetadata', () => {
+                canvas.width = webcamElement.videoWidth;
+                canvas.height = webcamElement.videoHeight;
+            });
+            
+            // Start session timer
+            startSessionTimer();
+            
+            showAlert('Camera started successfully!', 'success');
+            
+        } catch (error) {
+            console.error('Error starting camera:', error);
+            updateCameraStatus('error', '🔴 Camera Error');
+            showAlert('Failed to start camera. Please check permissions.', 'error');
+        }
+    }
+    
+    function stopCamera() {
+        if (webcam) {
+            webcam.getTracks().forEach(track => track.stop());
+            webcam = null;
+        }
+        
+        isStreaming = false;
+        stopPrediction();
+        
+        // Update UI
+        startCameraBtn.style.display = 'inline-flex';
+        stopCameraBtn.style.display = 'none';
+        togglePredictionBtn.style.display = 'none';
+        predictionDisplay.style.display = 'none';
+        updateCameraStatus('disconnected', '⚫ Camera Disconnected');
+        
+        // Stop session timer
+        stopSessionTimer();
+        
+        showAlert('Camera stopped.', 'warning');
+    }
+    
+    function togglePrediction() {
+        if (isPredicting) {
+            stopPrediction();
+        } else {
+            startPrediction();
+        }
+    }
+    
+    function startPrediction() {
+        if (!isStreaming) {
+            showAlert('Please start the camera first.', 'error');
+            return;
+        }
+        
+        isPredicting = true;
+        predictionDisplay.style.display = 'block';
+        togglePredictionBtn.textContent = '⏸️ Stop Prediction';
+        togglePredictionBtn.className = 'btn btn-danger';
+        
+        // Start prediction loop
+        predictionInterval = setInterval(captureAndPredict, 500); // Predict every 500ms
+        
+        showAlert('Prediction started!', 'success');
+    }
+    
+    function stopPrediction() {
+        isPredicting = false;
+        
+        if (predictionInterval) {
+            clearInterval(predictionInterval);
+            predictionInterval = null;
+        }
+        
+        togglePredictionBtn.textContent = '🔮 Start Prediction';
+        togglePredictionBtn.className = 'btn btn-success';
+        predictionDisplay.style.display = 'none';
+    }
+    
+    async function captureAndPredict() {
+        if (!isStreaming || !isPredicting) return;
+        
+        try {
+            // Draw current frame to canvas
+            ctx.drawImage(webcamElement, 0, 0, canvas.width, canvas.height);
+            
+            // Convert canvas to base64
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            
+            // Send to server for prediction
+            const response = await fetch('/predict_frame', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ image: imageData })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                updatePrediction(result.prediction, result.confidence);
+                updateStats(result.confidence);
+            } else {
+                updatePrediction('No hands detected', 0);
+            }
+            
+            // Update FPS
+            updateFPS();
+            
+        } catch (error) {
+            console.error('Prediction error:', error);
+            updatePrediction('Error', 0);
+        }
+    }
+    
+    function updatePrediction(prediction, confidence) {
+        predictionText.textContent = prediction;
+        confidenceText.textContent = `${confidence}%`;
+        confidenceFill.style.width = `${confidence}%`;
+        
+        // Update confidence fill color based on confidence level
+        if (confidence >= 70) {
+            confidenceFill.style.background = '#10b981'; // Green
+        } else if (confidence >= 40) {
+            confidenceFill.style.background = '#f59e0b'; // Yellow
+        } else {
+            confidenceFill.style.background = '#ef4444'; // Red
+        }
+    }
+    
+    function updateCameraStatus(status, text) {
+        cameraStatus.className = `status-indicator status-${status}`;
+        cameraStatus.innerHTML = `<span>${text.split(' ')[0]}</span><span>${text.substring(text.indexOf(' ') + 1)}</span>`;
+    }
+    
+    function startSessionTimer() {
+        sessionStartTime = Date.now();
+        sessionTimer = setInterval(updateSessionTime, 1000);
+    }
+    
+    function stopSessionTimer() {
+        if (sessionTimer) {
+            clearInterval(sessionTimer);
+            sessionTimer = null;
+        }
+    }
+    
+    function updateSessionTime() {
+        if (!sessionStartTime) return;
+        
+        const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        
+        document.getElementById('session-time').textContent = 
+            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    function updateStats(confidence) {
+        if (confidence > 0) {
+            predictionsCount++;
+            confidenceSum += confidence;
+            
+            document.getElementById('predictions-count').textContent = predictionsCount;
+            document.getElementById('avg-confidence').textContent = 
+                `${Math.round(confidenceSum / predictionsCount)}%`;
+        }
+    }
+    
+    function updateFPS() {
+        const now = performance.now();
+        frameCount++;
+        
+        if (now - lastFrameTime >= 1000) {
+            const fps = Math.round(frameCount * 1000 / (now - lastFrameTime));
+            document.getElementById('fps-counter').textContent = fps;
+            frameCount = 0;
+            lastFrameTime = now;
+        }
+    }
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+        stopCamera();
+    });
+
+    
+</script>
+{% endblock %}

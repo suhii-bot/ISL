@@ -1,0 +1,830 @@
+{% extends "base.html" %}
+
+{% block title %}ISL Dictionary - A-Z & 0-9{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Dictionary specific styles */
+    .dictionary-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .dictionary-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .dictionary-subtitle {
+        font-size: 1.2rem;
+        color: var(--text-secondary);
+        margin-bottom: 2rem;
+    }
+    
+    .filter-tabs {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+    
+    .filter-tab {
+        padding: 0.75rem 1.5rem;
+        border: 2px solid var(--border-color);
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+        border-radius: 2rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        text-decoration: none;
+    }
+    
+    .filter-tab:hover {
+        border-color: var(--primary-color);
+        background-color: var(--primary-color);
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .filter-tab.active {
+        border-color: var(--primary-color);
+        background-color: var(--primary-color);
+        color: white;
+        box-shadow: var(--shadow-md);
+    }
+    
+    .search-container {
+        max-width: 400px;
+        margin: 0 auto 2rem;
+        position: relative;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 1rem 1rem 1rem 3rem;
+        border: 2px solid var(--border-color);
+        border-radius: 2rem;
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 1.2rem;
+    }
+    
+    .signs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+    
+    .sign-card {
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 1rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        position: relative;
+        cursor: pointer;
+    }
+    
+    .sign-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary-color);
+    }
+    
+    .sign-image-container {
+        position: relative;
+        height: 200px;
+        background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    
+    .sign-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    
+    .sign-card:hover .sign-image {
+        transform: scale(1.05);
+    }
+    
+    .sign-placeholder {
+        font-size: 4rem;
+        color: var(--text-muted);
+        opacity: 0.5;
+    }
+    
+    .upload-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        color: white;
+    }
+    
+    .sign-card:hover .upload-overlay {
+        opacity: 1;
+    }
+    
+    .upload-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .upload-text {
+        font-size: 0.9rem;
+        text-align: center;
+    }
+    
+    .sign-info {
+        padding: 1.5rem;
+    }
+    
+    .sign-letter {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+        text-align: center;
+    }
+    
+    .sign-description {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .sign-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+    }
+    
+    .action-btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--border-color);
+        background-color: var(--bg-tertiary);
+        color: var(--text-primary);
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.8rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .action-btn:hover {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+    
+    .upload-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .upload-modal.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .upload-modal-content {
+        background-color: var(--bg-primary);
+        border-radius: 1rem;
+        padding: 2rem;
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.9);
+        transition: transform 0.3s ease;
+    }
+    
+    .upload-modal.active .upload-modal-content {
+        transform: scale(1);
+    }
+    
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .modal-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--text-primary);
+    }
+    
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .close-btn:hover {
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+    
+    .upload-area {
+        border: 2px dashed var(--border-color);
+        border-radius: 1rem;
+        padding: 2rem;
+        text-align: center;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .upload-area:hover,
+    .upload-area.dragover {
+        border-color: var(--primary-color);
+        background-color: var(--bg-secondary);
+    }
+    
+    .upload-area-icon {
+        font-size: 3rem;
+        color: var(--text-muted);
+        margin-bottom: 1rem;
+    }
+    
+    .upload-area-text {
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .upload-area-subtext {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+    
+    .file-input {
+        display: none;
+    }
+    
+    .preview-container {
+        margin-top: 1rem;
+        text-align: center;
+    }
+    
+    .preview-image {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 1rem;
+        background-color: var(--bg-secondary);
+        border-radius: 0.5rem;
+        border: 1px solid var(--border-color);
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+    
+    .stat-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+    
+    @media (max-width: 768px) {
+        .dictionary-title {
+            font-size: 2rem;
+        }
+        
+        .signs-grid {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .filter-tabs {
+            gap: 0.5rem;
+        }
+        
+        .filter-tab {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Dictionary Header -->
+<div class="dictionary-header">
+    <h1 class="dictionary-title">📚 ISL Dictionary</h1>
+    <p class="dictionary-subtitle">
+        Complete reference guide for Indian Sign Language alphabets (A-Z) and numbers (0-9).
+        Upload custom images for each sign to personalize your learning experience.
+    </p>
+    
+    <!-- Statistics -->
+    <div class="stats-container">
+        <div class="stat-item">
+            <div class="stat-number" id="total-signs">36</div>
+            <div class="stat-label">Total Signs</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number" id="uploaded-images">0</div>
+            <div class="stat-label">Custom Images</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number" id="alphabets-count">26</div>
+            <div class="stat-label">Alphabets</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number" id="numbers-count">10</div>
+            <div class="stat-label">Numbers</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Tabs -->
+<div class="filter-tabs">
+    <button class="filter-tab active" data-filter="all">🔤 All Signs</button>
+    <button class="filter-tab" data-filter="alphabets">🔤 A-Z</button>
+    <button class="filter-tab" data-filter="numbers">🔢 0-9</button>
+</div>
+
+<!-- Search -->
+<div class="search-container">
+    <div class="search-icon">🔍</div>
+    <input type="text" class="search-input" id="search-input" placeholder="Search for a sign...">
+</div>
+
+<!-- Signs Grid -->
+<div class="signs-grid" id="signs-grid">
+    <!-- Alphabets A-Z -->
+    {% for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
+    <div class="sign-card" data-category="alphabets" data-sign="{{ letter }}">
+        <div class="sign-image-container">
+            <img class="sign-image" id="image-{{ letter }}" src="/static/images/signs/{{ letter }}.jpg" 
+                 alt="ISL Sign for {{ letter }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="sign-placeholder" style="display: none;">✋</div>
+            <div class="upload-overlay">
+                <div class="upload-icon">📷</div>
+                <div class="upload-text">Click to upload<br>custom image</div>
+            </div>
+        </div>
+        <div class="sign-info">
+            <div class="sign-letter">{{ letter }}</div>
+            <div class="sign-description">Alphabet sign for letter {{ letter }}</div>
+            <div class="sign-actions">
+                <button class="action-btn" onclick="openUploadModal('{{ letter }}')">
+                    📷 Upload
+                </button>
+                <button class="action-btn" onclick="practiceSign('{{ letter }}')">
+                    🎯 Practice
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <!-- Numbers 0-9 -->
+    {% for number in '0123456789' %}
+    <div class="sign-card" data-category="numbers" data-sign="{{ number }}">
+        <div class="sign-image-container">
+            <img class="sign-image" id="image-{{ number }}" src="/static/images/signs/{{ number }}.jpg" 
+                 alt="ISL Sign for {{ number }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="sign-placeholder" style="display: none;">✋</div>
+            <div class="upload-overlay">
+                <div class="upload-icon">📷</div>
+                <div class="upload-text">Click to upload<br>custom image</div>
+            </div>
+        </div>
+        <div class="sign-info">
+            <div class="sign-letter">{{ number }}</div>
+            <div class="sign-description">Number sign for {{ number }}</div>
+            <div class="sign-actions">
+                <button class="action-btn" onclick="openUploadModal('{{ number }}')">
+                    📷 Upload
+                </button>
+                <button class="action-btn" onclick="practiceSign('{{ number }}')">
+                    🎯 Practice
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Upload Modal -->
+<div class="upload-modal" id="upload-modal">
+    <div class="upload-modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modal-title">Upload Image for Sign</h3>
+            <button class="close-btn" onclick="closeUploadModal()">✕</button>
+        </div>
+        
+        <form id="upload-form" enctype="multipart/form-data">
+            <input type="hidden" id="sign-input" name="sign">
+            
+            <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+                <div class="upload-area-icon">📁</div>
+                <div class="upload-area-text">Click to select an image</div>
+                <div class="upload-area-subtext">or drag and drop here</div>
+                <div class="upload-area-subtext">Supports: JPG, PNG, GIF (max 5MB)</div>
+            </div>
+            
+            <input type="file" id="file-input" class="file-input" name="image" 
+                   accept="image/*" onchange="handleFileSelect(event)">
+            
+            <div class="preview-container" id="preview-container" style="display: none;">
+                <img id="preview-image" class="preview-image" alt="Preview">
+                <div class="mb-2">
+                    <small class="text-muted" id="file-info"></small>
+                </div>
+            </div>
+            
+            <div class="flex gap-2 mt-3">
+                <button type="button" class="btn btn-secondary flex-1" onclick="closeUploadModal()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary flex-1" id="upload-btn" disabled>
+                    Upload Image
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- No Results Message -->
+<div id="no-results" class="text-center py-8" style="display: none;">
+    <div class="text-6xl mb-4">🔍</div>
+    <h3 class="text-xl font-bold mb-2">No signs found</h3>
+    <p class="text-muted">Try adjusting your search or filter criteria.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Global variables
+    let currentFilter = 'all';
+    let currentSearch = '';
+    let uploadedImagesCount = 0;
+    
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Setup event listeners
+        setupFilterTabs();
+        setupSearch();
+        setupDragAndDrop();
+        setupUploadForm();
+        
+        // Count existing uploaded images
+        countUploadedImages();
+        
+        // Load saved images from localStorage
+        loadSavedImages();
+    });
+    
+    function setupFilterTabs() {
+        const filterTabs = document.querySelectorAll('.filter-tab');
+        
+        filterTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Remove active class from all tabs
+                filterTabs.forEach(t => t.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                this.classList.add('active');
+                
+                // Update filter
+                currentFilter = this.dataset.filter;
+                filterSigns();
+            });
+        });
+    }
+    
+    function setupSearch() {
+        const searchInput = document.getElementById('search-input');
+        
+        searchInput.addEventListener('input', function() {
+            currentSearch = this.value.toLowerCase();
+            filterSigns();
+        });
+    }
+    
+    function filterSigns() {
+        const signCards = document.querySelectorAll('.sign-card');
+        const noResults = document.getElementById('no-results');
+        let visibleCount = 0;
+        
+        signCards.forEach(card => {
+            const category = card.dataset.category;
+            const sign = card.dataset.sign.toLowerCase();
+            
+            let showCard = true;
+            
+            // Filter by category
+            if (currentFilter !== 'all' && category !== currentFilter) {
+                showCard = false;
+            }
+            
+            // Filter by search
+            if (currentSearch && !sign.includes(currentSearch)) {
+                showCard = false;
+            }
+            
+            if (showCard) {
+                card.style.display = 'block';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        
+        // Show/hide no results message
+        if (visibleCount === 0) {
+            noResults.style.display = 'block';
+        } else {
+            noResults.style.display = 'none';
+        }
+    }
+    
+    function setupDragAndDrop() {
+        const uploadArea = document.getElementById('upload-area');
+        
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect({ target: { files: files } });
+            }
+        });
+    }
+    
+    function setupUploadForm() {
+        const uploadForm = document.getElementById('upload-form');
+        
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            uploadImage();
+        });
+    }
+    
+    function openUploadModal(sign) {
+        const modal = document.getElementById('upload-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const signInput = document.getElementById('sign-input');
+        
+        modalTitle.textContent = `Upload Image for Sign: ${sign}`;
+        signInput.value = sign;
+        
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeUploadModal() {
+        const modal = document.getElementById('upload-modal');
+        const previewContainer = document.getElementById('preview-container');
+        const fileInput = document.getElementById('file-input');
+        const uploadBtn = document.getElementById('upload-btn');
+        
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+        
+        // Reset form
+        previewContainer.style.display = 'none';
+        fileInput.value = '';
+        uploadBtn.disabled = true;
+    }
+    
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            showAlert('Please select a valid image file.', 'error');
+            return;
+        }
+        
+        // Validate file size (5MB max)
+        if (file.size > 5 * 1024 * 1024) {
+            showAlert('File size must be less than 5MB.', 'error');
+            return;
+        }
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewContainer = document.getElementById('preview-container');
+            const previewImage = document.getElementById('preview-image');
+            const fileInfo = document.getElementById('file-info');
+            const uploadBtn = document.getElementById('upload-btn');
+            
+            previewImage.src = e.target.result;
+            fileInfo.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            previewContainer.style.display = 'block';
+            uploadBtn.disabled = false;
+        };
+        
+        reader.readAsDataURL(file);
+    }
+    
+    async function uploadImage() {
+        const form = document.getElementById('upload-form');
+        const formData = new FormData(form);
+        const uploadBtn = document.getElementById('upload-btn');
+        const sign = document.getElementById('sign-input').value;
+        
+        try {
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Uploading...';
+            
+            const response = await fetch('/upload_sign_image', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Update the sign image
+                const signImage = document.getElementById(`image-${sign}`);
+                const placeholder = signImage.nextElementSibling;
+                
+                signImage.src = result.image_url + '?t=' + Date.now(); // Cache bust
+                signImage.style.display = 'block';
+                placeholder.style.display = 'none';
+                
+                // Save to localStorage
+                saveImageToLocal(sign, result.image_url);
+                
+                // Update stats
+                updateUploadedImagesCount();
+                
+                showAlert(`Image uploaded successfully for sign: ${sign}`, 'success');
+                closeUploadModal();
+            } else {
+                showAlert(result.message || 'Upload failed. Please try again.', 'error');
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            showAlert('Upload failed. Please check your connection and try again.', 'error');
+        } finally {
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = 'Upload Image';
+        }
+    }
+    
+    function practiceSign(sign) {
+        // Redirect to home page with practice mode for specific sign
+        window.location.href = `/?practice=${sign}`;
+    }
+    
+    function countUploadedImages() {
+        const signImages = document.querySelectorAll('.sign-image');
+        let count = 0;
+        
+        signImages.forEach(img => {
+            img.addEventListener('load', function() {
+                if (this.style.display !== 'none') {
+                    count++;
+                    document.getElementById('uploaded-images').textContent = count;
+                }
+            });
+        });
+    }
+    
+    function updateUploadedImagesCount() {
+        uploadedImagesCount++;
+        document.getElementById('uploaded-images').textContent = uploadedImagesCount;
+    }
+    
+    function saveImageToLocal(sign, imageUrl) {
+        const savedImages = JSON.parse(localStorage.getItem('islSignImages') || '{}');
+        savedImages[sign] = imageUrl;
+        localStorage.setItem('islSignImages', JSON.stringify(savedImages));
+    }
+    
+    function loadSavedImages() {
+        const savedImages = JSON.parse(localStorage.getItem('islSignImages') || '{}');
+        
+        Object.keys(savedImages).forEach(sign => {
+            const signImage = document.getElementById(`image-${sign}`);
+            if (signImage) {
+                signImage.src = savedImages[sign];
+            }
+        });
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('upload-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeUploadModal();
+        }
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeUploadModal();
+        }
+        
+        // Quick filter shortcuts
+        if (e.ctrlKey || e.metaKey) {
+            switch(e.key) {
+                case '1':
+                    e.preventDefault();
+                    document.querySelector('[data-filter="all"]').click();
+                    break;
+                case '2':
+                    e.preventDefault();
+                    document.querySelector('[data-filter="alphabets"]').click();
+                    break;
+                case '3':
+                    e.preventDefault();
+                    document.querySelector('[data-filter="numbers"]').click();
+                    break;
+            }
+        }
+    });
+</script>
+{% endblock %}
